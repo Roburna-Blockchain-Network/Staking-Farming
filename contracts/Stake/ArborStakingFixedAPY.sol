@@ -6,7 +6,7 @@ import "./IRewardWallet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import 'hardhat/console.sol';
+
 
 
 
@@ -103,7 +103,6 @@ contract ArborStaking is Ownable , Pausable{
         if (stakingBalance[user] > 0) {
              uint256 newRewards = ((block.timestamp - startTime[user]) * stakingBalance[user] * rewardRate) /
              (YEAR_SECOND * 100);
-            console.log(newRewards, 'newRewards');
             return newRewards + userRewards[user];
         }
        
