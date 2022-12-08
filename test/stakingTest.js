@@ -5,11 +5,12 @@ describe("Staking", function () {
 
   before(async function () {
     this.Iridium = await ethers.getContractFactory("Iridium")
-    this.Staking = await ethers.getContractFactory("BorStaking")
+    this.Staking = await ethers.getContractFactory("ArborStaking")
     this.Bor = await ethers.getContractFactory("BattlefieldOfRenegades")
     this.BorDT = await ethers.getContractFactory("BattlefieldOfRenegadesDividendTracker")
     this.Tresuary = await ethers.getContractFactory("Tresuary")
     this.Rewardwallet = await ethers.getContractFactory("RewardWallet")
+    this.DivToken = await ethers.getContractFactory("SaleToken")
     this.signers = await ethers.getSigners()
     this.owner = this.signers[0]
     this.vault1 = this.signers[5]
@@ -24,25 +25,29 @@ describe("Staking", function () {
     //this.router = await new ethers.Contract('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', ['function addLiquidityETH(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline) external payable returns (uint amountToken, uint amountETH, uint liquidity)'], this.provider)
     this.router = await new ethers.Contract('0x10ED43C718714eb63d5aA57B78B54704E256024E', ['function addLiquidityETH(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline) external payable returns (uint amountToken, uint amountETH, uint liquidity)', 'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)', 'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)', 'function swapExactTokensForETHSupportingFeeOnTransferTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external'], this.provider)     
   
-    let rba = "0x72A80De6cB2C99d39139eF789c1f5E78a70345aB"
+    let rba = "0xdd534480782ecf53e4a5257b0f3c37702a0bad61"
   
 
     this.iridium = await this.Iridium.deploy(this.router.address, this.vault1.address, this.vault2.address)
     await this.iridium.deployed()   
 
-    this.bor = await this.Bor.deploy(this.router.address, rba, this.vault1.address, this.vault2.address)
+    this.divToken = await this.DivToken.deploy()
+    await this.iridium.deployed()
+  
+
+    this.bor = await this.Bor.deploy(this.router.address, this.divToken.address, this.vault1.address, this.vault2.address)
     await this.bor.deployed   
 
     this.staking = await this.Staking.deploy(this.bor.address, this.iridium.address)
     await this.staking.deployed()   
 
-    this.tresuary = await this.Tresuary.deploy(this.staking.address, this.bor.address, rba)
+    this.tresuary = await this.Tresuary.deploy(this.staking.address, this.bor.address, this.divToken.address)
     await this.tresuary.deployed()
 
     this.rewardwallet = await this.Rewardwallet.deploy(this.iridium.address, this.staking.address)
     await this.tresuary.deployed() 
 
-    this.borDT = await this.BorDT.deploy( rba , this.bor.address)
+    this.borDT = await this.BorDT.deploy(this.divToken.address , this.bor.address)
     await this.borDT.deployed()   
 
     await this.bor.initializeDividendTracker(this.borDT.address)
@@ -76,11 +81,11 @@ describe("Staking", function () {
      
     
      
-    await this.bor.transfer(this.alice.address, ethers.utils.parseEther("100000"))
-    await this.bor.transfer(this.bob.address, ethers.utils.parseEther("100000"))
-    await this.bor.transfer(this.charlie.address, ethers.utils.parseEther("100000"))
+    await this.bor.transfer(this.alice.address, ethers.utils.parseEther("1000000"))
+    await this.bor.transfer(this.bob.address, ethers.utils.parseEther("1000000"))
+    await this.bor.transfer(this.charlie.address, ethers.utils.parseEther("1000000"))
 
-    await this.bor.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
+   // await this.bor.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
   })
 
   it("RewardWallet handles deposits correctly ", async function () {
@@ -105,26 +110,37 @@ describe("Staking", function () {
     await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
     await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
 
+    await this.bor.connect(this.charlie).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
+    await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
+
     await this.bor.connect(this.bob).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
     await this.staking.connect(this.bob).stake(ethers.utils.parseEther("30000"))
     
   })
 
   it("should withdraw rewards correctly", async function () {
+    let alicebalBe4 = await this.iridium.balanceOf(this.alice.address)
+    let balBe4 = ethers.utils.formatEther(alicebalBe4)
     await this.staking.connect(this.alice).withdrawRewards()
 
     let alicebal = await this.iridium.balanceOf(this.alice.address)
     let bal = ethers.utils.formatEther(alicebal)
     console.log(bal)
+    console.log(balBe4, 'balBe4');
 
   })
 
   it("should handle withdrawals correctly", async function () {
-    await this.staking.connect(this.alice).unstake(ethers.utils.parseEther("10000"))
-    let alicebal = await this.bor.balanceOf(this.alice.address)
+    await this.divToken.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
+    let alicebal = await this.divToken.balanceOf(this.alice.address)
     let bal = ethers.utils.formatEther(alicebal)
     console.log(bal)
-    await this.staking.setRewardRate(3000)
+    await this.staking.connect(this.alice).unstake(ethers.utils.parseEther("10000"))
+    let alicebalAfter = await this.divToken.balanceOf(this.alice.address)
+    let balAfter = ethers.utils.formatEther(alicebalAfter)
+    console.log(bal, 'divBalb4')
+    console.log(balAfter, 'divbalAfter')
   })
 
 
@@ -147,6 +163,8 @@ describe("Staking", function () {
     await this.staking.connect(this.bob).unstake(ethers.utils.parseEther("30000"))
     expect(await this.staking.isStaking(this.bob.address)).to.equal(false)
   })
+
+
 
 
 })  

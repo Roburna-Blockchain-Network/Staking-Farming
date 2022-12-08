@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 
-contract BorStaking is Ownable {
+contract ArborStaking is Ownable {
 
     mapping(address => uint256) public stakingBalance;
     mapping(address => bool) public isStaking;
@@ -16,58 +16,72 @@ contract BorStaking is Ownable {
     mapping(address => uint256) public userRewards;
     
 
-    uint256 rewardRate = 86400;
-    uint256 oldRewardRate;
-    uint256 rewardRateUpdatedTime;
+    uint256 public rewardRate = 86400;
+    uint256 public oldRewardRate;
+    uint256 public rewardRateUpdatedTime;
+
+    bool public isTresuarySet;
+    bool public isRewardWalletSet;
 
     ITresuary public tresuary;
     IRewardWallet public rewardWallet;
        
-
-    IERC20 public bor;
+    IERC20 public stakingToken;
     IERC20 public rewardsToken;
     
 
     event Stake(address indexed from, uint256 amount);
     event Unstake(address indexed from, uint256 amount);
     event RewardsWithdrawal(address indexed to, uint256 amount);
-    event RewardRateUpdated(uint256 oldRate, uint256 newRate);
-    event TresuaryUpdated(ITresuary oldTresuary, ITresuary newTresuary);
-    event RewardWalletUpdated(IRewardWallet oldRewardWallet, IRewardWallet newRewardWallet);
+    event LogSetRewardRate(uint256 oldRate, uint256 newRate);
+    event LogSetTresuary(address newTresuary);
+    event LogSetRewardWallet(address newRewardWallet);
 
 
-    constructor(IERC20 _bor, IERC20 _rewardsToken) {
-        bor = _bor;
-        rewardsToken = _rewardsToken;
+    constructor(address _stakingToken, address _rewardsToken) {
+        require(_stakingToken != address(0), "StakingToken Address 0 validation");
+        require(_rewardsToken != address(0), "RewardsToken Address 0 validation");
+
+        stakingToken = IERC20(_stakingToken);
+        rewardsToken = IERC20(_rewardsToken);
     }
 
     
     function stake(uint256 amount) public {
-        require(amount > 0 && bor.balanceOf(msg.sender) >= amount, "Incufficient BOR balance");
+        require(amount > 0, "Can't be 0");
+        require(amount > 0 && stakingToken.balanceOf(msg.sender) >= amount, "Incufficient stakingToken balance");
 
         if(isStaking[msg.sender] == true){
             uint256 toTransfer = getTotalRewards(msg.sender);
             userRewards[msg.sender] += toTransfer;
         }
 
-        tresuary.deposit(msg.sender, amount);
         stakingBalance[msg.sender] += amount;
         startTime[msg.sender] = block.timestamp;
         isStaking[msg.sender] = true;
+
+        tresuary.deposit(msg.sender, amount);
+
         emit Stake(msg.sender, amount);
     }
 
 
     function unstake(uint256 amount) public {
+        require(amount > 0, "Can't be 0");
         require(isStaking[msg.sender] = true && stakingBalance[msg.sender] >= amount, "Nothing to unstake");
+
         uint256 rewards = getTotalRewards(msg.sender);
+
         startTime[msg.sender] = block.timestamp;
         stakingBalance[msg.sender] -= amount;
-        tresuary.withdraw(msg.sender, amount);
         userRewards[msg.sender] += rewards;
+
         if(stakingBalance[msg.sender] == 0){
             isStaking[msg.sender] = false;
         }
+
+        tresuary.withdraw(msg.sender, amount);
+
         emit Unstake(msg.sender, amount);
     }
 
@@ -109,21 +123,37 @@ contract BorStaking is Ownable {
     } 
 
     function setRewardRate(uint256 _rewardRate) external onlyOwner {
-        emit RewardRateUpdated(rewardRate, _rewardRate);
+        require(rewardRate != _rewardRate, "Already set to this value");
+        require(_rewardRate != 0, "Can't be 0");
+
         rewardRateUpdatedTime = block.timestamp;
         oldRewardRate = rewardRate;
-        rewardRate = _rewardRate;      
+        rewardRate = _rewardRate;   
+
+        emit LogSetRewardRate(oldRewardRate, rewardRate);
     }
 
 
-    function setTresuary(ITresuary _tresuary) external onlyOwner {
-        emit TresuaryUpdated(tresuary, _tresuary);
-        tresuary = _tresuary;
+    function setTresuary(address _tresuary) external onlyOwner {
+        require(address(tresuary) != _tresuary, "Already set to this value");
+        require(_tresuary != address(0), "Address 0 validation");
+        require(isTresuarySet == false, "Tresuary can be set only once");
+
+        isTresuarySet = true;
+        tresuary = ITresuary(_tresuary);
+
+        emit LogSetTresuary(_tresuary);
     }
 
-    function setRewardWallet(IRewardWallet _rewardWallet) external onlyOwner {
-        emit RewardWalletUpdated(rewardWallet, _rewardWallet);
-        rewardWallet = _rewardWallet;
+    function setRewardWallet(address _rewardWallet) external onlyOwner {
+        require(address(rewardWallet) != _rewardWallet, "Already set to this value");
+        require(_rewardWallet != address(0), "Address 0 validation");
+        require(isRewardWalletSet == false, "Tresuary can be set only once");
+
+        isRewardWalletSet = true;
+        rewardWallet = IRewardWallet(_rewardWallet);
+
+        emit LogSetRewardWallet(_rewardWallet);
     }
 
     function getRewardRate() external view returns(uint256){

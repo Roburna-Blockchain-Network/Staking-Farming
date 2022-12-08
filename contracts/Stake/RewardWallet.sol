@@ -9,7 +9,7 @@ contract RewardWallet is Ownable {
    
    uint256 public totalDeposited; 
    address public deployer;
-   IERC20 public iridium;
+   IERC20 public rewardToken;
 
    event Deposit(address user, uint256 amount);
    event Withdrawal(address user, uint256 amount);
@@ -18,32 +18,39 @@ contract RewardWallet is Ownable {
    event LogUpdateDeployerAddress(address newDeployer);
 
    /** 
-     * @dev Throws if called by any account other than the owner or deployer.
+     * @dev Throws if called by any account other than the deployer.
      */
-   modifier onlyOwnerOrDeployer() {
-       require(owner() == _msgSender() || deployer == _msgSender(), "Ownable: caller is not the owner or deployer");
+   modifier onlyDeployer() {
+       require(deployer == _msgSender(), "Caller is not the deployer");
        _;
    }
    
-   constructor(IERC20 _iridium, address _stakingContract){
+   constructor(address _rewardToken, address _stakingContract){
+      require(_rewardToken != address(0), "RewardToken Address 0 validation");
+      require(_stakingContract != address(0), "StakingContract Address 0 validation");
       deployer = _msgSender();
-      iridium = _iridium;
+      rewardToken = IERC20(_rewardToken);
+
       //transferOwnership
       transferOwnership(_stakingContract);
    }
 
-   function deposit(uint256 amount) external{
-      require(iridium.allowance(msg.sender, address(this)) >= amount, "Insufficient allowance.");
+   function deposit(uint256 amount) external onlyDeployer{
+      require(amount > 0, "Cant be 0");
+      require(rewardToken.allowance(msg.sender, address(this)) >= amount, "Insufficient allowance.");
+
       totalDeposited += amount;
-      iridium.transferFrom(msg.sender, address(this), amount);
+      rewardToken.transferFrom(msg.sender, address(this), amount);
 
       emit Deposit(msg.sender, amount);
    }
 
    function transfer(address account, uint256 amount) external onlyOwner{
+      require(amount > 0, "Cant be 0");
       require(amount <= totalDeposited, "Insufficient funds");
+
       totalDeposited -= amount;
-      iridium.transfer(account, amount);
+      rewardToken.transfer(account, amount);
 
       emit Withdrawal(account, amount);
    }
@@ -52,23 +59,31 @@ contract RewardWallet is Ownable {
       return totalDeposited;
    }
 
-   function withdrawBNB(address payable account, uint256 amount) external onlyOwnerOrDeployer {
+   function withdrawBNB(address payable account, uint256 amount) external onlyDeployer {
       require(amount <= (address(this)).balance, "Incufficient funds");
-      account.transfer(amount);
+      safeTransferBNB(account, amount);
       emit LogWithdrawalBNB(account, amount);
    }
 
-    /**
-     * @notice Should not be withdrawn scam token.
-     */
-    function withdrawToken(IERC20 token, address account, uint256 amount) external onlyOwnerOrDeployer {
-      require(amount <= token.balanceOf(account), "Incufficient funds");
-      require(token.transfer(account, amount), "Transfer Fail");
-      emit LogWithdrawToken(address(token), account, amount);
+   // Internal function to handle safe transfer
+   function safeTransferBNB(address to, uint256 value) internal {
+      (bool success, ) = to.call{value: value}(new bytes(0));
+      require(success);
    }
 
-   function updateDeployerAddress(address newDeployer) external onlyOwnerOrDeployer{
-      require(deployer != newDeployer, "The address is already set");
+   function withdrawToken(address token, address account, uint256 amount) external onlyDeployer {
+      require(amount <= IERC20(token).balanceOf(account), "Incufficient funds");
+      if(token == address(rewardToken)){
+         require(amount <= totalDeposited, "Incufficient funds");
+         totalDeposited -= amount;
+      }
+      IERC20(token).transfer(account, amount);
+      emit LogWithdrawToken(token, account, amount);
+   }
+
+   function updateDeployerAddress(address newDeployer) external onlyDeployer{
+      require(deployer != newDeployer, "Already set to this value");
+      require(newDeployer != address(0), "Address 0 validation");
       deployer = newDeployer;
       emit LogUpdateDeployerAddress(newDeployer);
    }

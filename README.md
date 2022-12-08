@@ -1,42 +1,51 @@
-# Advanced Sample Hardhat Project
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+1. SETUP
+   F4H
+   1. initializeDividendTracker(DT_ADDRESS)
+   2. setTransfersEnabled(true)
+   3. setDexTradesEnabled(true)
+   4. setAtomatedMarketMakerPair(TRESUARY_ADDRESS)
+   5. includeInDividends(TRESUARY_ADDRESS)
+   6. excludeFromFees(TRESUARY_ADDRESS)
+   
+   STAKING CONTRACT
+   1. setRewardWallet(REWARD_WALLET)
+   2. setTresuary(TRESUARY_ADDRESS)
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
+2. DESCRIPTION
+   
+   REWARD WALLET:
+   1. deployer can deposit reward tokens using deposit() function
+   2. staking contract is the owner. It takes rewards from the reward wallet. users can withdraw rewards through staking contract that calls transfer() function on reward wallet
 
-Try running some of the following tasks:
+   TRESUARY:
+   1. holds staked f4h
+   2. receives dividends
+   3. distributes dividends automatically during stake/unstake
+   4. staking contract is the owner 
+   5. when stake() is called on the staking contract it calls deposit() on tresury contract
+   6. when unstake() is called on the staking contract it calls withdraw() on tresury contract
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-npx hardhat help
-REPORT_GAS=true npx hardhat test
-npx hardhat coverage
-npx hardhat run scripts/deploy.js
-node scripts/deploy.js
-npx eslint '**/*.js'
-npx eslint '**/*.js' --fix
-npx prettier '**/*.{json,sol,md}' --check
-npx prettier '**/*.{json,sol,md}' --write
-npx solhint 'contracts/**/*.sol'
-npx solhint 'contracts/**/*.sol' --fix
-```
+   STAKING CONTRCAT:
+   1. keeps track of user balances
+   2. a user can withdraw rewards 
+   3. owner can set the reward rate
 
-# Etherscan verification
+3. HOW TO STAKE:
+   1. approve f4h for tresuary address 
+   2. stake
 
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
+4. HOW TO UNSTAKE:
+   1. unstake 
 
-In this project, copy the .env.example file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
+5. HOW TO WITHDRAW REWARDS:
+   1. withdarwRewards   
 
-```shell
-hardhat run --network ropsten scripts/deploy.js
-```
+6.  HOW TO WITHDRAW DIVIDENDS: 
+   1. it's distributed automatically when stake/unstake 
 
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
 
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
-```
+
+
+
+

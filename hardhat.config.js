@@ -1,3 +1,5 @@
+
+
 require("dotenv").config();
 
 require("@nomiclabs/hardhat-etherscan");
@@ -17,8 +19,8 @@ module.exports = {
       
     },
     binance: {
-       url: "https://bsc-dataseed3.ninicoin.io/",
-       accounts:[env.process.PRIVATE_KEY],
+       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+       accounts:['7f5b32382c7e9040d52d66aec5adc1602eafe101e66ea895f2c7446f5f407282'],
        allowUnlimitedContractSize: true
     }
     
@@ -28,7 +30,7 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: [env.process.API_KEY],
+    apiKey: 'MMTH9PCYDD18ZYA6TKHA51TUKEJ536C33P',
     
   },
   

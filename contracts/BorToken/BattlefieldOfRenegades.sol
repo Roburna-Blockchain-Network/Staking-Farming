@@ -396,22 +396,6 @@ contract BattlefieldOfRenegades is ERC20, ERC1363, ERC2612, ERC20Burnable, ERC20
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
-        // when NOT from or to owner, to safetyVault address or to dex pair
-        // check if target wallet exeeds the maxWalletPAirs
-        if (
-            from != owner() &&
-            to != owner() &&
-            to != address(0) &&
-            to != 0x000000000000000000000000000000000000dEaD &&
-            !automatedMarketMakerPairs[to]
-        ) {
-            uint256 contractBalanceRecepient = balanceOf(to);
-            require(
-                contractBalanceRecepient + amount <= maxWalletToken,
-                "BattlefieldOfRenegades: Exceeds maximum wallet token amount."
-            );
-        }
-
         // only whitelisted addresses can make transfers when transfers are disabled
         if (!transfersEnabled) {
             require(whitelistedAddresses[from], "BattlefieldOfRenegades: Transfering is disabled");
