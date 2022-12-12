@@ -6,7 +6,7 @@ import "./IRewardWallet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import 'hardhat/console.sol';
+
 
 
 contract ArborStakingFixedTime is Ownable , Pausable{
@@ -66,7 +66,6 @@ contract ArborStakingFixedTime is Ownable , Pausable{
         startTime[msg.sender] = block.timestamp;
         isStaking[msg.sender] = true;
         userEndTime[msg.sender] = block.timestamp + (lockTime * 1 days);
-        console.log(userEndTime[msg.sender]);
 
         tresuary.deposit(msg.sender, amount);
 
