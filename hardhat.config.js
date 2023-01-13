@@ -20,7 +20,7 @@ module.exports = {
     },
     binance: {
        url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-       accounts:['7f5b32382c7e9040d52d66aec5adc1602eafe101e66ea895f2c7446f5f407282'],
+       accounts:['dfc7f5fef4cd7582662eeff2917f8eaed8343f05035d3484171b502627f49737'],
        allowUnlimitedContractSize: true
     }
     

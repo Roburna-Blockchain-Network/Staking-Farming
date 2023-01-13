@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 
 
-contract ArborStakingFixedTime is Ownable , Pausable{
+contract ArborStakingFixedTimeRBA2Years is Ownable , Pausable{
 
     mapping(address => uint256) public stakingBalance;
     mapping(address => bool) public isStaking;
@@ -20,7 +20,7 @@ contract ArborStakingFixedTime is Ownable , Pausable{
 
     uint256 public constant YEAR_SECOND = 31577600;
 
-    uint256 public rewardRate = 10;
+    uint256 public rewardRate = 12;
     uint256 public oldRewardRate;
     uint256 public rewardRateUpdatedTime;
     uint256 public lockTime;

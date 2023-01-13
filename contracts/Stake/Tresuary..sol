@@ -170,6 +170,22 @@ contract Tresuary is ITresuary, Ownable {
         emit Withdrawal(staker, amount);
     }
 
+    function withdrawDividends() external {
+        UserInfo storage user = userInfo[msg.sender];
+        if (user.amount != 0) { 
+            updateReward();   
+            uint256 _pending = user.amount
+                .mul(accRewardPerShare)
+                .div(ACC_REWARD_PER_SHARE_PRECISION)
+                .sub(user.rewardDebt);
+            user.rewardDebt = user.amount.mul(accRewardPerShare).div(ACC_REWARD_PER_SHARE_PRECISION) ;  
+            if (_pending != 0) {
+                safeTokenTransfer(msg.sender, _pending);
+                emit ClaimReward(msg.sender, _pending);
+            }
+        }
+    }
+
     /**
      * @notice Update reward variables
      * @dev Needs to be called before any deposit or withdrawal

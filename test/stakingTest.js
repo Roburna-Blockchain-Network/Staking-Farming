@@ -4,13 +4,12 @@ const { ethers } = require("hardhat");
 describe("Staking", function () {
 
   before(async function () {
-    this.Iridium = await ethers.getContractFactory("Iridium")
+    
     this.Staking = await ethers.getContractFactory("ArborStaking")
-    this.Bor = await ethers.getContractFactory("BattlefieldOfRenegades")
-    this.BorDT = await ethers.getContractFactory("BattlefieldOfRenegadesDividendTracker")
     this.Tresuary = await ethers.getContractFactory("Tresuary")
     this.Rewardwallet = await ethers.getContractFactory("RewardWallet")
-    this.DivToken = await ethers.getContractFactory("SaleToken")
+    this.DivToken = await ethers.getContractFactory("DividendToken")
+    this.StakingToken = await ethers.getContractFactory("StakingToken")
     this.signers = await ethers.getSigners()
     this.owner = this.signers[0]
     this.vault1 = this.signers[5]
@@ -21,78 +20,38 @@ describe("Staking", function () {
     this.charlie = this.signers[6]
     this.provider = await ethers.provider
     this.burnWallet = "0x000000000000000000000000000000000000dEaD"
-    //this.factory = await ethers.getContractAt("IUniswapV2Factory", '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
-    //this.router = await new ethers.Contract('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', ['function addLiquidityETH(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline) external payable returns (uint amountToken, uint amountETH, uint liquidity)'], this.provider)
-    this.router = await new ethers.Contract('0x10ED43C718714eb63d5aA57B78B54704E256024E', ['function addLiquidityETH(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline) external payable returns (uint amountToken, uint amountETH, uint liquidity)', 'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)', 'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)', 'function swapExactTokensForETHSupportingFeeOnTransferTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external'], this.provider)     
-  
-    let rba = "0xdd534480782ecf53e4a5257b0f3c37702a0bad61"
+    
   
 
-    this.iridium = await this.Iridium.deploy(this.router.address, this.vault1.address, this.vault2.address)
-    await this.iridium.deployed()   
+    this.stakingToken = await this.StakingToken.deploy()
+    await this.stakingToken.deployed()   
 
     this.divToken = await this.DivToken.deploy()
-    await this.iridium.deployed()
+    await this.divToken.deployed()
   
-
-    this.bor = await this.Bor.deploy(this.router.address, this.divToken.address, this.vault1.address, this.vault2.address)
-    await this.bor.deployed   
-
-    this.staking = await this.Staking.deploy(this.bor.address, this.iridium.address)
+    this.staking = await this.Staking.deploy(this.stakingToken.address, this.stakingToken.address);
     await this.staking.deployed()   
 
-    this.tresuary = await this.Tresuary.deploy(this.staking.address, this.bor.address, this.divToken.address)
+    this.tresuary = await this.Tresuary.deploy(this.staking.address, this.stakingToken.address, this.divToken.address)
     await this.tresuary.deployed()
 
-    this.rewardwallet = await this.Rewardwallet.deploy(this.iridium.address, this.staking.address)
-    await this.tresuary.deployed() 
+    this.rewardwallet = await this.Rewardwallet.deploy(this.stakingToken.address, this.staking.address)
+    await this.rewardwallet.deployed() 
 
-    this.borDT = await this.BorDT.deploy(this.divToken.address , this.bor.address)
-    await this.borDT.deployed()   
-
-    await this.bor.initializeDividendTracker(this.borDT.address)
-    await this.bor.setTransfersEnabled(true)   
-   
-     
-    const RouterWSigner = await this.router.connect(this.owner)   
-    
-    await this.iridium.approve('0x10ED43C718714eb63d5aA57B78B54704E256024E', ethers.utils.parseEther("9000000000"));
-    await RouterWSigner.addLiquidityETH(
-      this.iridium.address,
-      ethers.utils.parseEther("90000"),
-      ethers.utils.parseEther("90000"),
-      ethers.utils.parseEther("200"),
-      this.owner.address ,
-      Math.floor(Date.now() / 1000) + 60 * 10,
-      {value : ethers.utils.parseEther("200")}
-    );   
-
-    await this.bor.approve('0x10ED43C718714eb63d5aA57B78B54704E256024E', ethers.utils.parseEther("9000000000"));
-    await RouterWSigner.addLiquidityETH(
-      this.bor.address,
-      ethers.utils.parseEther("90000"),
-      ethers.utils.parseEther("90000"),
-      ethers.utils.parseEther("200"),
-      this.owner.address ,
-      Math.floor(Date.now() / 1000) + 60 * 10,
-      {value : ethers.utils.parseEther("200")}
-    );   
-
-     
     
      
-    await this.bor.transfer(this.alice.address, ethers.utils.parseEther("1000000"))
-    await this.bor.transfer(this.bob.address, ethers.utils.parseEther("1000000"))
-    await this.bor.transfer(this.charlie.address, ethers.utils.parseEther("1000000"))
+    await this.stakingToken.transfer(this.alice.address, ethers.utils.parseEther("100000"))
+    await this.stakingToken.transfer(this.bob.address, ethers.utils.parseEther("100000"))
+    await this.stakingToken.transfer(this.charlie.address, ethers.utils.parseEther("100000"))
 
-   // await this.bor.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.divToken.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
   })
 
   it("RewardWallet handles deposits correctly ", async function () {
-    await this.iridium.approve(this.rewardwallet.address, ethers.utils.parseEther("10000000"))
-    await this.rewardwallet.deposit(ethers.utils.parseEther("1000000"))  
+    await this.stakingToken.approve(this.rewardwallet.address, ethers.utils.parseEther("100000"))
+    await this.rewardwallet.deposit(ethers.utils.parseEther("100000"))  
 
-    expect(await this.rewardwallet.getTotalDeposited()).to.equal(ethers.utils.parseEther("1000000"))
+    expect(await this.rewardwallet.getTotalDeposited()).to.equal(ethers.utils.parseEther("100000"))
   })
 
   it("Make sure it sets reward wallet and treasury correctly", async function () {
@@ -106,27 +65,27 @@ describe("Staking", function () {
 
 
   it("should handle deposits correctly", async function () {
-    await this.bor.connect(this.alice).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.stakingToken.connect(this.alice).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
     await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
     await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
    
-    await this.bor.connect(this.charlie).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.stakingToken.connect(this.charlie).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
     await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
     await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
 
-    await this.bor.connect(this.bob).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.stakingToken.connect(this.bob).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
     await this.staking.connect(this.bob).stake(ethers.utils.parseEther("30000"))
     
   })
 
   it("should withdraw rewards correctly", async function () {
-    let alicebalBe4 = await this.iridium.balanceOf(this.alice.address)
+    let alicebalBe4 = await this.stakingToken.balanceOf(this.alice.address)
     let balBe4 = ethers.utils.formatEther(alicebalBe4)
     await this.staking.connect(this.alice).withdrawRewards()
 
-    let alicebal = await this.iridium.balanceOf(this.alice.address)
+    let alicebal = await this.stakingToken.balanceOf(this.alice.address)
     let bal = ethers.utils.formatEther(alicebal)
-    console.log(bal)
+    console.log(bal, 'bal')
     console.log(balBe4, 'balBe4');
 
   })
@@ -147,7 +106,7 @@ describe("Staking", function () {
   it(" Make sure it calculates rewards after updated reward rate correctly ", async function () {
     await this.staking.connect(this.alice).withdrawRewards()
 
-    let alicebal = await this.iridium.balanceOf(this.alice.address)
+    let alicebal = await this.stakingToken.balanceOf(this.alice.address)
     let bal = ethers.utils.formatEther(alicebal)
     console.log(bal)
 
@@ -162,6 +121,40 @@ describe("Staking", function () {
   it("Set's isStaking to false if user balance 0", async function (){
     await this.staking.connect(this.bob).unstake(ethers.utils.parseEther("30000"))
     expect(await this.staking.isStaking(this.bob.address)).to.equal(false)
+  })
+
+  it.only("Withdraw divs externally", async function (){
+
+    await this.staking.setTresuary(this.tresuary.address)
+    await this.staking.setRewardWallet(this.rewardwallet.address) 
+
+    await this.stakingToken.connect(this.alice).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
+    await this.staking.connect(this.alice).stake(ethers.utils.parseEther("30000"))
+   
+    await this.stakingToken.connect(this.charlie).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
+    await this.staking.connect(this.charlie).stake(ethers.utils.parseEther("30000"))
+
+    await this.stakingToken.connect(this.bob).approve(this.tresuary.address, ethers.utils.parseEther("100000"))
+    await this.staking.connect(this.bob).stake(ethers.utils.parseEther("30000"))
+
+    let alicebal = await this.divToken.balanceOf(this.alice.address)
+    let bal = ethers.utils.formatEther(alicebal)
+
+    await this.divToken.transfer(this.tresuary.address, ethers.utils.parseEther("100000"))
+
+     await this.tresuary.connect(this.alice).withdrawDividends();
+     await this.divToken.transfer(this.tresuary.address, ethers.utils.parseEther("100"))
+     await this.tresuary.connect(this.alice).withdrawDividends();
+
+   // await this.staking.connect(this.alice).unstake(ethers.utils.parseEther("60000"))
+    
+    let alicebalAfter = await this.divToken.balanceOf(this.alice.address)
+    let balAfter = ethers.utils.formatEther(alicebalAfter)
+
+    console.log(bal, 'divBalb4')
+    console.log(balAfter, 'divbalAfter')
   })
 
 

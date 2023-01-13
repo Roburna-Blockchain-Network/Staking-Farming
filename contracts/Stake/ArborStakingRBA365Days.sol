@@ -9,21 +9,21 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 
 
-
-
-contract ArborStaking is Ownable , Pausable{
+contract ArborStakingFixedTimeRBA365Days is Ownable , Pausable{
 
     mapping(address => uint256) public stakingBalance;
     mapping(address => bool) public isStaking;
     mapping(address => uint256) public startTime;
     mapping(address => uint256) public userRewards;
+    mapping(address => uint256) public userEndTime;
     
 
     uint256 public constant YEAR_SECOND = 31577600;
 
-    uint256 public rewardRate = 10;
+    uint256 public rewardRate = 8;
     uint256 public oldRewardRate;
     uint256 public rewardRateUpdatedTime;
+    uint256 public lockTime;
 
     bool public isTresuarySet;
     bool public isRewardWalletSet;
@@ -43,12 +43,13 @@ contract ArborStaking is Ownable , Pausable{
     event LogSetRewardWallet(address newRewardWallet);
 
 
-    constructor(address _stakingToken, address _rewardsToken) {
+    constructor(address _stakingToken, address _rewardsToken, uint256 _lockTime) {
         require(_stakingToken != address(0), "StakingToken Address 0 validation");
         require(_rewardsToken != address(0), "RewardsToken Address 0 validation");
 
         stakingToken = IERC20(_stakingToken);
         rewardsToken = IERC20(_rewardsToken);
+        lockTime = _lockTime;
     }
 
     
@@ -64,6 +65,7 @@ contract ArborStaking is Ownable , Pausable{
         stakingBalance[msg.sender] += amount;
         startTime[msg.sender] = block.timestamp;
         isStaking[msg.sender] = true;
+        userEndTime[msg.sender] = block.timestamp + (lockTime * 1 days);
 
         tresuary.deposit(msg.sender, amount);
 
@@ -73,6 +75,7 @@ contract ArborStaking is Ownable , Pausable{
 
     function unstake(uint256 amount) public whenNotPaused{
         require(amount > 0, "Can't be 0");
+        require(block.timestamp > userEndTime[msg.sender], "Can't unstake yet");
         require(isStaking[msg.sender] = true && stakingBalance[msg.sender] >= amount, "Nothing to unstake");
 
         uint256 rewards = getTotalRewards(msg.sender);
