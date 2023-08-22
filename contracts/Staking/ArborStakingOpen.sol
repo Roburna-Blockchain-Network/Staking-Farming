@@ -7,19 +7,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
+contract ArborStakingOpen is Ownable, Pausable {
     mapping(address => uint256) public stakingBalance;
     mapping(address => bool) public isStaking;
     mapping(address => uint256) public startTime;
     mapping(address => uint256) public userRewards;
-    mapping(address => uint256) public userEndTime;
 
     uint256 public constant YEAR_SECOND = 31577600;
 
-    uint256 public rewardRate = 12;
+    uint256 public rewardRate = 2;
     uint256 public oldRewardRate;
     uint256 public rewardRateUpdatedTime;
-    uint256 public lockTime;
 
     bool public isTresuarySet;
     bool public isRewardWalletSet;
@@ -37,20 +35,7 @@ contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
     event LogSetTresuary(address newTresuary);
     event LogSetRewardWallet(address newRewardWallet);
 
-    /**
-     *
-     * @param _stakingToken address of the staking token
-     * @param _rewardsToken address of the rewards token
-     * @param _lockTime locktime duration in days
-     * @param _rewardRate reward rate in percentage
-     */
-
-    constructor(
-        address _stakingToken,
-        address _rewardsToken,
-        uint256 _lockTime,
-        uint256 _rewardRate
-    ) {
+    constructor(address _stakingToken, address _rewardsToken) {
         require(
             _stakingToken != address(0),
             "StakingToken Address 0 validation"
@@ -62,15 +47,7 @@ contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
 
         stakingToken = IERC20(_stakingToken);
         rewardsToken = IERC20(_rewardsToken);
-        lockTime = _lockTime;
-        rewardRate = _rewardRate;
     }
-
-    /**
-     * @dev stake tokens
-     *
-     * @param amount amount to stake
-     */
 
     function stake(uint256 amount) public whenNotPaused {
         require(amount > 0, "Can't be 0");
@@ -81,28 +58,20 @@ contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
 
         if (isStaking[msg.sender] == true) {
             uint256 toTransfer = getTotalRewards(msg.sender);
-            userRewards[msg.sender] += toTransfer;
+            userRewards[msg.sender] = toTransfer;
         }
 
         stakingBalance[msg.sender] += amount;
         startTime[msg.sender] = block.timestamp;
         isStaking[msg.sender] = true;
-        userEndTime[msg.sender] = block.timestamp + (lockTime * 1 days);
 
         tresuary.deposit(msg.sender, amount);
 
         emit Stake(msg.sender, amount);
     }
 
-    /**
-     * @dev unstake tokens
-     *
-     * @param amount amount to unstake
-     */
-
     function unstake(uint256 amount) public whenNotPaused {
         require(amount > 0, "Can't be 0");
-        require(block.timestamp > userEndTime[msg.sender], "Can't unstake yet");
         require(
             isStaking[msg.sender] =
                 true &&
@@ -138,6 +107,8 @@ contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
                 rewardRate) / (YEAR_SECOND * 100);
             return newRewards + userRewards[user];
         }
+
+        return userRewards[user];
     }
 
     function getPendingRewards(address user) public view returns (uint256) {
@@ -211,9 +182,9 @@ contract ArborStakingFixedTimeRBA2Years is Ownable, Pausable {
             "Incufficient rewards balance"
         );
 
-        uint256 oldBalance = userRewards[msg.sender];
+        // uint256 oldBalance = userRewards[msg.sender];
         userRewards[msg.sender] = 0;
-        toWithdraw += oldBalance;
+        // toWithdraw += oldBalance;
 
         startTime[msg.sender] = block.timestamp;
         rewardWallet.transfer(msg.sender, toWithdraw);

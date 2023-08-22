@@ -7,7 +7,7 @@ import "./ITresuary.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract Tresuary is ITresuary, Ownable { 
+contract Tresuary is ITresuary, Ownable {
     using SafeMath for uint256;
 
     address public stakingContract;
@@ -15,7 +15,6 @@ contract Tresuary is ITresuary, Ownable {
 
     IERC20 public stakingToken;
     IERC20 public dividendToken;
-
 
     /// @notice Info of each user
     struct UserInfo {
@@ -39,7 +38,7 @@ contract Tresuary is ITresuary, Ownable {
     /// this allows to reward users with stakingToken
     uint256 public internalStakingTokenBalance;
 
-    /// @notice Last reward balance 
+    /// @notice Last reward balance
     uint256 public lastRewardBalance;
 
     /// @notice Accumulated rewards per share, scaled to `ACC_REWARD_PER_SHARE_PRECISION`
@@ -51,7 +50,6 @@ contract Tresuary is ITresuary, Ownable {
     /// @dev Info of each user that stakes stakingToken
     mapping(address => UserInfo) private userInfo;
 
-
     event Deposit(address user, uint256 amount);
     event Withdrawal(address user, uint256 amount);
     event LogWithdrawalBNB(address account, uint256 amount);
@@ -61,19 +59,34 @@ contract Tresuary is ITresuary, Ownable {
     /// @notice Emitted when a user claims reward
     event ClaimReward(address indexed user, uint256 amount);
 
-
-    /** 
+    /**
      * @dev Throws if called by any account other than the owner or deployer.
      */
     modifier onlyDeployer() {
-        require(deployer == _msgSender(), "Ownable: caller is not the deployer");
+        require(
+            deployer == _msgSender(),
+            "Ownable: caller is not the deployer"
+        );
         _;
     }
 
-    constructor(address _stakingContract, address _stakingToken, address _dividendToken){
-        require(_stakingContract != address(0), "StakingContract Address 0 validation");
-        require(_stakingToken != address(0), "StakingToken Address 0 validation");
-        require(_dividendToken != address(0), "DividendToken Address 0 validation");
+    constructor(
+        address _stakingContract,
+        address _stakingToken,
+        address _dividendToken
+    ) {
+        require(
+            _stakingContract != address(0),
+            "StakingContract Address 0 validation"
+        );
+        require(
+            _stakingToken != address(0),
+            "StakingToken Address 0 validation"
+        );
+        require(
+            _dividendToken != address(0),
+            "DividendToken Address 0 validation"
+        );
         deployer = _msgSender();
         stakingContract = _stakingContract;
         stakingToken = IERC20(_stakingToken);
@@ -82,8 +95,11 @@ contract Tresuary is ITresuary, Ownable {
         transferOwnership(_stakingContract);
     }
 
-    function deposit(address staker, uint256 amount) external onlyOwner{
-        require(stakingToken.allowance(staker, address(this)) >= amount, "Insufficient allowance.");
+    function deposit(address staker, uint256 amount) external onlyOwner {
+        require(
+            stakingToken.allowance(staker, address(this)) >= amount,
+            "Insufficient allowance."
+        );
         UserInfo storage user = userInfo[staker];
         uint256 _previousAmount = user.amount;
         uint256 _newAmount = user.amount.add(amount);
@@ -91,7 +107,9 @@ contract Tresuary is ITresuary, Ownable {
 
         updateReward();
         uint256 _previousRewardDebt = user.rewardDebt;
-        user.rewardDebt = _newAmount.mul(accRewardPerShare).div(ACC_REWARD_PER_SHARE_PRECISION);
+        user.rewardDebt = _newAmount.mul(accRewardPerShare).div(
+            ACC_REWARD_PER_SHARE_PRECISION
+        );
         if (_previousAmount != 0) {
             uint256 _pending = _previousAmount
                 .mul(accRewardPerShare)
@@ -102,7 +120,7 @@ contract Tresuary is ITresuary, Ownable {
                 emit ClaimReward(staker, _pending);
             }
         }
-        
+
         internalStakingTokenBalance = internalStakingTokenBalance.add(amount);
         stakingToken.transferFrom(staker, address(this), amount);
         emit Deposit(staker, amount);
@@ -114,11 +132,12 @@ contract Tresuary is ITresuary, Ownable {
      * @return The amount of stakingToken user has deposited
      * @return The reward debt for the chosen token
      */
-    function getUserInfo(address _user) external view returns (uint256, uint256) {
+    function getUserInfo(
+        address _user
+    ) external view returns (uint256, uint256) {
         UserInfo storage user = userInfo[_user];
-        return (user.amount, user.rewardDebt); 
+        return (user.amount, user.rewardDebt);
     }
-
 
     /**
      * @notice View function to see pending reward token on frontend
@@ -126,7 +145,6 @@ contract Tresuary is ITresuary, Ownable {
      * @return `_user`'s pending reward token
      */
     function pendingReward(address _user) external view returns (uint256) {
-
         UserInfo storage user = userInfo[_user];
         uint256 _totalStakingToken = internalStakingTokenBalance;
         uint256 _accRewardTokenPerShare = accRewardPerShare;
@@ -137,33 +155,40 @@ contract Tresuary is ITresuary, Ownable {
         if (_rewardBalance != lastRewardBalance && _totalStakingToken != 0) {
             uint256 _accruedReward = _rewardBalance.sub(lastRewardBalance);
             _accRewardTokenPerShare = _accRewardTokenPerShare.add(
-                _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(_totalStakingToken)
+                _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(
+                    _totalStakingToken
+                )
             );
         }
         return
-            user.amount.mul(_accRewardTokenPerShare).div(ACC_REWARD_PER_SHARE_PRECISION).sub(user.rewardDebt);
+            user
+                .amount
+                .mul(_accRewardTokenPerShare)
+                .div(ACC_REWARD_PER_SHARE_PRECISION)
+                .sub(user.rewardDebt);
     }
 
-    function withdraw(address staker, uint256 amount) external onlyOwner{
+    function withdraw(address staker, uint256 amount) external onlyOwner {
         UserInfo storage user = userInfo[staker];
         uint256 _previousAmount = user.amount;
         require(_previousAmount >= amount, "Insufficient funds");
         uint256 _newAmount = user.amount.sub(amount);
         user.amount = _newAmount;
 
-        if (_previousAmount != 0) { 
-            updateReward();   
+        if (_previousAmount != 0) {
+            updateReward();
             uint256 _pending = _previousAmount
                 .mul(accRewardPerShare)
                 .div(ACC_REWARD_PER_SHARE_PRECISION)
                 .sub(user.rewardDebt);
-            user.rewardDebt = _newAmount.mul(accRewardPerShare).div(ACC_REWARD_PER_SHARE_PRECISION) ;  
+            user.rewardDebt = _newAmount.mul(accRewardPerShare).div(
+                ACC_REWARD_PER_SHARE_PRECISION
+            );
             if (_pending != 0) {
                 safeTokenTransfer(staker, _pending);
                 emit ClaimReward(staker, _pending);
             }
         }
-      
 
         internalStakingTokenBalance = internalStakingTokenBalance.sub(amount);
         stakingToken.transfer(staker, amount);
@@ -172,13 +197,16 @@ contract Tresuary is ITresuary, Ownable {
 
     function withdrawDividends() external {
         UserInfo storage user = userInfo[msg.sender];
-        if (user.amount != 0) { 
-            updateReward();   
-            uint256 _pending = user.amount
+        if (user.amount != 0) {
+            updateReward();
+            uint256 _pending = user
+                .amount
                 .mul(accRewardPerShare)
                 .div(ACC_REWARD_PER_SHARE_PRECISION)
                 .sub(user.rewardDebt);
-            user.rewardDebt = user.amount.mul(accRewardPerShare).div(ACC_REWARD_PER_SHARE_PRECISION) ;  
+            user.rewardDebt = user.amount.mul(accRewardPerShare).div(
+                ACC_REWARD_PER_SHARE_PRECISION
+            );
             if (_pending != 0) {
                 safeTokenTransfer(msg.sender, _pending);
                 emit ClaimReward(msg.sender, _pending);
@@ -195,7 +223,6 @@ contract Tresuary is ITresuary, Ownable {
 
         uint256 _currRewardBalance = dividendToken.balanceOf(address(this));
         uint256 _rewardBalance = _currRewardBalance;
-    
 
         // Did  tresuary receive any token
         if (_rewardBalance == lastRewardBalance || _totalStakingToken == 0) {
@@ -205,7 +232,9 @@ contract Tresuary is ITresuary, Ownable {
         uint256 _accruedReward = _rewardBalance.sub(lastRewardBalance);
 
         accRewardPerShare = accRewardPerShare.add(
-            _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(_totalStakingToken)
+            _accruedReward.mul(ACC_REWARD_PER_SHARE_PRECISION).div(
+                _totalStakingToken
+            )
         );
         lastRewardBalance = _rewardBalance;
     }
@@ -216,10 +245,7 @@ contract Tresuary is ITresuary, Ownable {
      * @param _to The address that will receive `_amount` `rewardToken`
      * @param _amount The amount to send to `_to`
      */
-    function safeTokenTransfer(
-        address _to,
-        uint256 _amount
-    ) internal {
+    function safeTokenTransfer(address _to, uint256 _amount) internal {
         uint256 _currRewardBalance = dividendToken.balanceOf(address(this));
         uint256 _rewardBalance = _currRewardBalance;
 
@@ -232,34 +258,46 @@ contract Tresuary is ITresuary, Ownable {
         }
     }
 
-    function withdrawBNB(address payable account, uint256 amount) external onlyDeployer {
-      require(amount <= (address(this)).balance, "Incufficient funds");
-      safeTransferBNB(account, amount);
-      emit LogWithdrawalBNB(account, amount);
+    function withdrawBNB(
+        address payable account,
+        uint256 amount
+    ) external onlyDeployer {
+        require(amount <= (address(this)).balance, "Incufficient funds");
+        safeTransferBNB(account, amount);
+        emit LogWithdrawalBNB(account, amount);
     }
 
     // Internal function to handle safe transfer
     function safeTransferBNB(address to, uint256 value) internal {
-       (bool success, ) = to.call{value: value}(new bytes(0));
-       require(success);
+        (bool success, ) = to.call{value: value}(new bytes(0));
+        require(success);
     }
 
     /**
      * @notice Should not be withdrawn scam token.
      */
-    function withdrawToken(address token, address account, uint256 amount) external onlyDeployer {
-        require(amount <= IERC20(token).balanceOf(account), "Incufficient funds");
-        require(token != address(dividendToken), "Can't withdraw dividendToken");
+    function withdrawToken(
+        address token,
+        address account,
+        uint256 amount
+    ) external onlyDeployer {
+        require(
+            amount <= IERC20(token).balanceOf(account),
+            "Incufficient funds"
+        );
+        require(
+            token != address(dividendToken),
+            "Can't withdraw dividendToken"
+        );
         require(token != address(stakingToken), "Can't withdraw stakingToken");
         require(IERC20(token).transfer(account, amount), "Transfer Fail");
 
         emit LogWithdrawToken(address(token), account, amount);
     }
 
-    function updateDeployerAddress(address newDeployer) external onlyDeployer{
-      require(deployer != newDeployer, "The address is already set");
-      deployer = newDeployer;
-      emit LogUpdateDeployerAddress(newDeployer);
+    function updateDeployerAddress(address newDeployer) external onlyDeployer {
+        require(deployer != newDeployer, "The address is already set");
+        deployer = newDeployer;
+        emit LogUpdateDeployerAddress(newDeployer);
     }
-    
 }
