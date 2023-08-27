@@ -16,7 +16,7 @@ contract ArborStakingLock is Ownable, Pausable {
 
     uint256 public constant YEAR_SECOND = 31577600;
 
-    uint256 public rewardRate = 12;
+    uint256 public rewardRate;
     uint256 public oldRewardRate;
     uint256 public rewardRateUpdatedTime;
     uint256 public lockTime;

@@ -35,8 +35,24 @@ async function main() {
   const lockStakingContract = await ethers.getContractFactory("ArborStakingLock")
   const rewardWalletContract = await ethers.getContractFactory("contracts/Staking/RewardWallet.sol:RewardWallet")
   const tresuaryContract = await ethers.getContractFactory("contracts/Staking/Tresuary.sol:Tresuary")
+  const mockTokenContract = await ethers.getContractFactory("MockToken")
 
-  const openStaking = await openStakingContract.deploy(config.address.roburna, config.address.roburna,
+  /**
+   * deploy open staking contract
+   */
+
+  const rbaToken = await mockTokenContract.deploy("Roburna", "RBA", {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.deployed();
+
+  const usdcToken = await mockTokenContract.deploy("USDC", "USDC", {
+    gasPrice: gasPrice
+  });
+  await usdcToken.deployed();
+
+  const openStaking = await openStakingContract.deploy(rbaToken.address, rbaToken.address,
     {
       gasPrice: gasPrice
     });
@@ -44,8 +60,8 @@ async function main() {
 
   const openStakingTreasury = await tresuaryContract.deploy(
     openStaking.address,
-    config.address.roburna,
-    config.address.usdc,
+    rbaToken.address,
+    usdcToken.address,
     {
       gasPrice: gasPrice
     }
@@ -54,7 +70,7 @@ async function main() {
   await openStakingTreasury.deployed();
 
   const openStakingReward = await rewardWalletContract.deploy(
-    config.address.roburna,
+    rbaToken.address,
     openStaking.address,
     {
       gasPrice: gasPrice
@@ -75,8 +91,8 @@ async function main() {
    */
 
   const lock3yStaking = await lockStakingContract.deploy(
-    config.address.roburna,
-    config.address.roburna,
+    rbaToken.address,
+    rbaToken.address,
     config.lock3yStaking.lockTime,
     config.lock3yStaking.rate,
     {
@@ -88,8 +104,8 @@ async function main() {
 
   const lock3yStakingTreasury = await tresuaryContract.deploy(
     lock3yStaking.address,
-    config.address.roburna,
-    config.address.usdc,
+    rbaToken.address,
+    usdcToken.address,
     {
       gasPrice: gasPrice
     }
@@ -98,7 +114,7 @@ async function main() {
   await lock3yStakingTreasury.deployed();
 
   const lock3yStakingReward = await rewardWalletContract.deploy(
-    config.address.roburna,
+    rbaToken.address,
     lock3yStaking.address,
     {
       gasPrice: gasPrice
@@ -121,8 +137,8 @@ async function main() {
    */
 
   const lock5yStaking = await lockStakingContract.deploy(
-    config.address.roburna,
-    config.address.roburna,
+    rbaToken.address,
+    rbaToken.address,
     config.lock5yStaking.lockTime,
     config.lock5yStaking.rate,
     {
@@ -134,8 +150,8 @@ async function main() {
 
   const lock5yStakingTreasury = await tresuaryContract.deploy(
     lock5yStaking.address,
-    config.address.roburna,
-    config.address.usdc,
+    rbaToken.address,
+    usdcToken.address,
     {
       gasPrice: gasPrice
     }
@@ -144,7 +160,7 @@ async function main() {
   await lock5yStakingTreasury.deployed();
 
   const lock5yStakingReward = await rewardWalletContract.deploy(
-    config.address.roburna,
+    rbaToken.address,
     lock5yStaking.address,
     {
       gasPrice: gasPrice
@@ -169,7 +185,7 @@ async function main() {
     await hre.run("verify:verify", {
       address: openStaking.address,
       contract: "contracts/Staking/ArborStakingOpen.sol:ArborStakingOpen",
-      constructorArguments: [config.address.roburna, config.address.roburna],
+      constructorArguments: [rbaToken.address, rbaToken.address],
     });
   } catch (error) {
     console.log(error);
@@ -180,8 +196,8 @@ async function main() {
       address: lock3yStaking.address,
       contract: "contracts/Staking/ArborStakingLock.sol:ArborStakingLock",
       constructorArguments: [
-        config.address.roburna,
-        config.address.roburna,
+        rbaToken.address,
+        rbaToken.address,
         config.lock3yStaking.lockTime,
         config.lock3yStaking.rate,
       ],
@@ -196,8 +212,8 @@ async function main() {
       contract: "contracts/Staking/Tresuary.sol:Tresuary",
       constructorArguments: [
         openStaking.address,
-        config.address.roburna,
-        config.address.usdc,
+        rbaToken.address,
+        usdcToken.address,
       ],
     });
   } catch (error) {
@@ -208,21 +224,21 @@ async function main() {
     await hre.run("verify:verify", {
       address: openStakingReward.address,
       contract: "contracts/Staking/RewardWallet.sol:RewardWallet",
-      constructorArguments: [config.address.roburna, openStaking.address],
+      constructorArguments: [rbaToken.address, openStaking.address],
     });
   } catch (error) {
     console.log(error);
   }
 
-  // try {
-  //   await hre.run("verify:verify", {
-  //     address: config.address.roburna,
-  //     contract: "contracts/MockToken.sol:MockToken",
-  //     constructorArguments: ["Roburna", "RBA"],
-  //   });
-  // } catch (error) {
-  //   console.log(error);
-  // }
+  try {
+    await hre.run("verify:verify", {
+      address: rbaToken.address,
+      contract: "contracts/MockToken.sol:MockToken",
+      constructorArguments: ["Roburna", "RBA"],
+    });
+  } catch (error) {
+    console.log(error);
+  }
 
 
   /**
@@ -238,6 +254,96 @@ async function main() {
   console.log('openStakingReward address: ', openStakingReward.address);
   console.log('lock3yStakingReward address: ', lock3yStakingReward.address);
   console.log('lock5yStakingReward address: ', lock5yStakingReward.address);
+  console.log('rbaToken address: ', rbaToken.address);
+  console.log('usdc address: ', usdcToken.address);
+
+  /**
+   * approve rba to reward wallet and treasury
+   */
+
+  await rbaToken.approve(openStakingReward.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.approve(lock3yStakingReward.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.approve(lock5yStakingReward.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.approve(openStakingTreasury.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.approve(lock3yStakingTreasury.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  await rbaToken.approve(lock5yStakingTreasury.address, ethers.constants.MaxUint256, {
+    gasPrice: gasPrice
+  });
+
+  /**
+   * deposit to reward wallet
+   */
+
+  await openStakingReward.deposit(thousand, {
+    gasPrice: gasPrice
+  });
+
+  await lock3yStakingReward.deposit(thousand, {
+    gasPrice: gasPrice
+  });
+
+  await lock5yStakingReward.deposit(thousand, {
+    gasPrice: gasPrice
+  });
+
+
+  /**
+   * start staking
+   */
+
+  await openStaking.stake(hundred, {
+    gasPrice: gasPrice
+  })
+
+  await lock3yStaking.stake(hundred, {
+    gasPrice: gasPrice
+  })
+
+  await lock5yStaking.stake(hundred, {
+    gasPrice: gasPrice
+  })
+
+
+  /**
+   * test withdraw reward
+   * 
+   */
+
+  await openStaking.withdrawRewards({
+    gasPrice: gasPrice
+  })
+
+  await lock3yStaking.withdrawRewards({
+    gasPrice: gasPrice
+  })
+
+  await lock5yStaking.withdrawRewards({
+    gasPrice: gasPrice
+  })
+
+  /**
+   * test withdraw stake
+   */
+
+  await openStaking.unstake(hundred, {
+    gasPrice: gasPrice
+  })
+
 }
 
 
