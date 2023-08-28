@@ -120,7 +120,17 @@ describe("Lock Staking", function () {
 
   it("Can unstake", async function () {
 
-    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1000"))
+    const aliceReward = await this.stakingContract.getTotalRewards(this.alice.address);
+    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
+    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
+    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
+    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
+    const aliceRewardAfter = await this.stakingContract.getTotalRewards(this.alice.address);
+
+    console.log("Alice Reward: ", ethers.utils.formatEther(aliceReward))
+    console.log("Alice Reward after Staking Again: ", ethers.utils.formatEther(aliceRewardAfter))
+
+    console.log("Total Different: ", ethers.utils.formatEther(aliceRewardAfter.sub(aliceReward)))
 
   })
 

@@ -83,7 +83,7 @@ contract ArborStakingOpen is Ownable, Pausable {
 
         startTime[msg.sender] = block.timestamp;
         stakingBalance[msg.sender] -= amount;
-        userRewards[msg.sender] += rewards;
+        userRewards[msg.sender] = rewards;
 
         if (stakingBalance[msg.sender] == 0) {
             isStaking[msg.sender] = false;
