@@ -19,7 +19,6 @@ const config = {
   },
 }
 
-
 const thousand = ethers.utils.parseEther("1000")
 const hundred = ethers.utils.parseEther("100")
 
