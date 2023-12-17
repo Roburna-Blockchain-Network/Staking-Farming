@@ -52,6 +52,11 @@ The ArborStakingLock is a smart contract for Ethereum-based blockchain platforms
 
 Interacting with the contract requires a balance of the staking token, and the contract's ABI and address. 
 
+1. Deploy Staking
+2. Deploy Tresuary
+3. Deploy Reward wallet
+4. Set Treasury and Reward wallet in the staking contract
+5. Fund Reward wallet
 
 Approving Tokens for the Treasury
 
