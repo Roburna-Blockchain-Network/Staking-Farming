@@ -18,11 +18,11 @@ module.exports = {
       }
 
     },
-    binance: {
-      url: process.env.RPC,
-      accounts: [process.env.PRIVATE_KEY],
-      allowUnlimitedContractSize: true
-    }
+    // binance: {
+    //   url: process.env.RPC,
+    //   accounts: [process.env.PRIVATE_KEY],
+    //   allowUnlimitedContractSize: true
+    // }
 
   },
   gasReporter: {

@@ -93,8 +93,9 @@ describe("Open Staking", function () {
     await ethers.provider.send('evm_mine');
     const aliceReward = await this.stakingContract.getTotalRewards(this.alice.address);
     await this.stakingContract.connect(this.alice).stake(ethers.utils.parseEther("1000"))
-
-    // await this.stakingContract.connect(this.alice).withdrawRewards()
+    await this.stakingContract.connect(this.alice).stake(ethers.utils.parseEther("1000"))
+    await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1000"))
+    await this.stakingContract.connect(this.alice).withdrawRewards()
 
     const aliceRewardAfter = await this.stakingContract.getTotalRewards(this.alice.address);
 
@@ -110,7 +111,10 @@ describe("Open Staking", function () {
 
   it("Can unstake", async function () {
     const aliceReward = await this.stakingContract.getTotalRewards(this.alice.address);
+    await ethers.provider.send('evm_increaseTime', [99999999999]);
+    await ethers.provider.send('evm_mine');
     await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
+    await this.stakingContract.connect(this.alice).stake(ethers.utils.parseEther("1"))
     await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
     await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
     await this.stakingContract.connect(this.alice).unstake(ethers.utils.parseEther("1"))
