@@ -1,16 +1,17 @@
 
 
-   ArborStakingLock Smart Contract
-Overview
+#   ArborStakingLock Smart Contract
+## Overview
 
 The ArborStakingLock is a smart contract for Ethereum-based blockchain platforms, designed to facilitate token staking and reward distribution. It incorporates features like staking, unstaking, reward calculation, and administrative controls. This contract is Ownable and Pausable, meaning it has ownership controls and can be paused by the owner for maintenance or emergency purposes.
-Features
+
+## Features
 
     Staking and Unstaking Tokens: Users can stake tokens, which are then locked for a specified period. Unstaking is available after the lock period.
     Reward Calculation: Rewards are calculated based on the staking duration and amount.
     Administrative Functions: The owner can set the reward rate, treasury, and reward wallet.
 
-Contract Details
+## Contract Details
 
     Mappings:
         stakingBalance: Tracks the staking balance of each address.
@@ -28,7 +29,7 @@ Contract Details
         tresuary, rewardWallet: Addresses for the treasury and reward wallet.
         stakingToken, rewardsToken: Addresses of the staking and rewards tokens.
 
-Key Functions
+## Key Functions
 
     Stake/Unstake Tokens:
         stake(uint256 amount): To stake a certain amount of tokens.
@@ -42,12 +43,12 @@ Key Functions
         setRewardWallet(address _rewardWallet): Sets the reward wallet address.
         setUnpause(), setPause(): To pause or unpause the contract.
 
-Events
+## Events
 
     Stake, Unstake, RewardsWithdrawal: Events emitted for staking, unstaking, and reward withdrawal.
     LogSetRewardRate, LogSetTresuary, LogSetRewardWallet: Events for administrative actions.
 
-Getting Started
+## Getting Started
 
 Interacting with the contract requires a balance of the staking token, and the contract's ABI and address.
 
@@ -124,5 +125,45 @@ const unstakeTx = await stakingContract.unstake(amountToUnstake);
 await unstakeTx.wait();
 ```
 
+# Tresuary Smart Contract
+## Overview
+
+The Tresuary contract is a key component of a staking ecosystem, responsible for managing staking and dividend tokens. It automates the deposit and withdrawal of staking tokens and oversees the distribution of dividends. The contract is Ownable, with certain functions accessible only by the owner (staking contract) or a designated deployer.
+
+## Features
+
+    Automated Token Management: Handles staking and dividend tokens in coordination with the staking contract.
+    User Rewards: Calculates and distributes rewards to stakers based on their staked amounts.
+    Withdrawal of Dividends: Enables users to manually withdraw their dividend earnings.
+    Administrative Functions: Provides controls for the deployer to manage the contract's operations.
+
+## Contract Details
+
+    State Variables:
+        stakingContract: The address of the associated staking contract.
+        deployer: The address of the deployer with special administrative privileges.
+        stakingToken, dividendToken: ERC20 tokens used for staking and dividends.
+        UserInfo: A structure storing user-specific data like staked amount and reward debt.
+    Key Functions:
+        withdrawDividends(): Allows users to withdraw their accumulated dividends.
+        updateReward(): Updates reward variables for accurate calculation.
+        getUserInfo(address _user): Returns user-specific information, such as staked amount and rewards.
+        pendingReward(address _user): Calculates pending rewards for a user.
+    Administrative Functions:
+        withdrawBNB(address payable account, uint256 amount): Withdraws BNB.
+        withdrawToken(address token, address account, uint256 amount): Withdraws specified tokens.
+        updateDeployerAddress(address newDeployer): Updates the deployer address.
+
+## Interacting with the Contract
+
+Example Usage
+
+Claiming Dividends
+
+```
+const tresuaryContract = new ethers.Contract(tresuaryAddress, tresuaryABI, signer);
+const claimDividendsTx = await tresuaryContract.withdrawDividends();
+await claimDividendsTx.wait();
+```
 
 
