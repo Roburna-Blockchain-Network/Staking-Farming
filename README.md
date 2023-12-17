@@ -87,7 +87,7 @@ Staking Tokens
 
 After approval, you can stake tokens by interacting with the ArborStakingLock contract:
 
-```
+```javascript
 const stakingContract = new ethers.Contract(stakingContractAddress, stakingContractABI, signer);
 const stakeTx = await stakingContract.stake(amountToStake);
 await stakeTx.wait();
@@ -97,7 +97,7 @@ Unstaking Tokens
 
 To unstake:
 
-```
+```javascript
 const unstakeTx = await stakingContract.unstake(amountToUnstake);
 await unstakeTx.wait();
 ```
@@ -137,7 +137,7 @@ Example Usage
 
 Claiming Dividends
 
-```
+```javascript
 const tresuaryContract = new ethers.Contract(tresuaryAddress, tresuaryABI, signer);
 const claimDividendsTx = await tresuaryContract.withdrawDividends();
 await claimDividendsTx.wait();
