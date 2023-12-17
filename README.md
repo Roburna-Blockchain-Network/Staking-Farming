@@ -29,6 +29,23 @@ The ArborStakingLock is a smart contract for Ethereum-based blockchain platforms
         tresuary, rewardWallet: Addresses for the treasury and reward wallet.
         stakingToken, rewardsToken: Addresses of the staking and rewards tokens.
 
+    Constructor Parameters:
+    _stakingToken (address):
+        This is the address of the ERC20 token that will be used for staking.
+        Users will stake tokens of this type to participate in the reward system.
+
+    _rewardsToken (address):
+        This refers to the address of the ERC20 token used for distributing rewards.
+        Rewards for staking will be given out in this token.
+
+    _lockTime (uint256):
+        This is the duration for which tokens will be locked when staked, specified in days.
+        It defines the minimum period a user must stake their tokens before being able to unstake.
+
+    _rewardRate (uint256):
+        This parameter sets the initial reward rate in percentage.
+        It determines the rate at which rewards will be calculated for the staked tokens.    
+
 ## Key Functions
 
     Stake/Unstake Tokens:
