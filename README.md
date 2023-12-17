@@ -75,7 +75,7 @@ Interacting with the contract requires a balance of the staking token, and the c
 4. Set Treasury and Reward wallet in the staking contract
 5. Fund Reward wallet
 
-Approving Tokens for the Treasury
+### Approving Tokens for the Treasury
 
 Before staking, tokens must be approved for transfer by the treasury. This is done by interacting with the token's contract:
 
@@ -83,7 +83,7 @@ const tokenContract = new ethers.Contract(tokenAddress, tokenABI, signer);
 const approveTx = await tokenContract.approve(tresuaryAddress, amountToApprove);
 await approveTx.wait();
 
-Staking Tokens
+### Staking Tokens
 
 After approval, you can stake tokens by interacting with the ArborStakingLock contract:
 
@@ -93,7 +93,7 @@ const stakeTx = await stakingContract.stake(amountToStake);
 await stakeTx.wait();
 ```
 
-Unstaking Tokens
+### Unstaking Tokens
 
 To unstake:
 
@@ -135,7 +135,7 @@ The Tresuary contract is a key component of a staking ecosystem, responsible for
 
 Example Usage
 
-Claiming Dividends
+### Claiming Dividends
 
 ```javascript
 const tresuaryContract = new ethers.Contract(tresuaryAddress, tresuaryABI, signer);
